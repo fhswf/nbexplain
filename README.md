@@ -103,6 +103,7 @@ Cell magic options:
 - `--base-url URL`
 - `--lang de|en`
 - `--max-output-tokens N`
+- `--debug`
 
 ## License
 

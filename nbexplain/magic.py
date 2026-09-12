@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shlex
 from textwrap import dedent
@@ -25,6 +26,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--base-url", default=os.getenv(BASE_URL_ENV_VAR, DEFAULT_BASE_URL))
     parser.add_argument("--lang", default="de")
     parser.add_argument("--max-output-tokens", type=int, default=900)
+    parser.add_argument("--debug", action="store_true")
     parser.add_argument("-h", "--help", action="store_true")
     return parser
 
@@ -52,6 +54,7 @@ def _help_text() -> str:
         - `--base-url URL`, default: `{DEFAULT_BASE_URL}` or `{BASE_URL_ENV_VAR}`
         - `--lang de|en`, default: `de`
         - `--max-output-tokens N`, default: `900`
+        - `--debug`, show the raw response when no text can be extracted
 
         The API key is read from `{DEFAULT_ENV_VAR}` by default. If that is not
         set, `{FALLBACK_ENV_VAR}` is used as a fallback. Do not store API keys in
@@ -68,20 +71,21 @@ def _response_text(response: object) -> str:
     choices = getattr(response, "choices", None) or []
     if choices:
         message = getattr(choices[0], "message", None)
-        content = getattr(message, "content", None)
-        if isinstance(content, str) and content:
-            return content
-        if isinstance(content, list):
-            parts = []
-            for item in content:
-                if isinstance(item, dict):
-                    value = item.get("text") or item.get("content")
-                else:
-                    value = getattr(item, "text", None) or getattr(item, "content", None)
-                if value:
-                    parts.append(str(value))
-            if parts:
-                return "\n".join(parts).strip()
+        parts = []
+        for attr in ("content", "reasoning_content", "reasoning", "text"):
+            value = getattr(message, attr, None)
+            if isinstance(value, str) and value:
+                parts.append(value)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        item_value = item.get("text") or item.get("content")
+                    else:
+                        item_value = getattr(item, "text", None) or getattr(item, "content", None)
+                    if item_value:
+                        parts.append(str(item_value))
+        if parts:
+            return "\n".join(parts).strip()
 
     # Defensive fallback for SDK/model response shape changes.
     parts: list[str] = []
@@ -91,6 +95,44 @@ def _response_text(response: object) -> str:
             if value:
                 parts.append(str(value))
     return "\n".join(parts).strip()
+
+
+def _response_debug(response: object) -> str:
+    if hasattr(response, "model_dump"):
+        data = response.model_dump(mode="json")
+    elif hasattr(response, "dict"):
+        data = response.dict()
+    else:
+        data = repr(response)
+    if isinstance(data, str):
+        return data
+    return json.dumps(data, indent=2, ensure_ascii=False)
+
+
+def _empty_response_message(response: object, debug: bool) -> str:
+    choices = getattr(response, "choices", None) or []
+    details = []
+    if choices:
+        finish_reason = getattr(choices[0], "finish_reason", None)
+        if finish_reason:
+            details.append(f"- `finish_reason`: `{finish_reason}`")
+        message = getattr(choices[0], "message", None)
+        if message is not None:
+            keys = []
+            if hasattr(message, "model_dump"):
+                keys = [key for key, value in message.model_dump().items() if value not in (None, "", [])]
+            if keys:
+                details.append(f"- message fields with values: `{', '.join(keys)}`")
+
+    text = "**The model returned no extractable text.**"
+    if details:
+        text += "\n\n" + "\n".join(details)
+    text += "\n\nTry another model, for example: `%%explain --model gpt-5-mini`."
+    if debug:
+        text += "\n\nRaw response:\n\n```json\n" + _response_debug(response) + "\n```"
+    else:
+        text += "\n\nRun with `%%explain --debug` to show the raw response."
+    return text
 
 
 @magics_class
@@ -152,20 +194,31 @@ class ExplainMagic(Magics):
             prompt = f"Erklaere diesen Python-Code Schritt fuer Schritt:\n\n```python\n{code}\n```"
 
         try:
-            response = client.chat.completions.create(
-                model=args.model,
-                messages=[
+            request = {
+                "model": args.model,
+                "messages": [
                     {"role": "system", "content": instruction},
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=args.max_output_tokens,
-            )
+            }
+            try:
+                response = client.chat.completions.create(
+                    **request,
+                    max_completion_tokens=args.max_output_tokens,
+                )
+            except Exception as first_exc:
+                if "max_completion_tokens" not in str(first_exc):
+                    raise
+                response = client.chat.completions.create(
+                    **request,
+                    max_tokens=args.max_output_tokens,
+                )
             explanation = _response_text(response)
         except Exception as exc:
             display(Markdown(f"**LLM call failed:** `{type(exc).__name__}: {exc}`"))
             return
 
-        display(Markdown(explanation or "_The model returned no text._"))
+        display(Markdown(explanation or _empty_response_message(response, args.debug)))
 
 
 def load_ipython_extension(ipython) -> None:
