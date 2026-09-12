@@ -12,7 +12,7 @@ from IPython.core.magic import Magics, cell_magic, magics_class
 from IPython.display import Markdown, display
 
 
-DEFAULT_MODEL = "openai/gpt-5-nano"
+DEFAULT_MODEL = "openai/gpt-4.1-nano"
 DEFAULT_ENV_VAR = "JUPYTER_OPENAI_API_KEY"
 FALLBACK_ENV_VAR = "OPENAI_API_KEY"
 DEFAULT_BASE_URL = "https://hub.ki.fh-swf.de/v1"
@@ -127,7 +127,11 @@ def _empty_response_message(response: object, debug: bool) -> str:
     text = "**The model returned no extractable text.**"
     if details:
         text += "\n\n" + "\n".join(details)
-    text += "\n\nTry another model, for example: `%%explain --model gpt-5-mini`."
+    text += (
+        "\n\nTry a non-reasoning chat model, for example: "
+        "`%%explain --model openai/gpt-4.1-nano`, or increase the budget with "
+        "`%%explain --max-output-tokens 3000`."
+    )
     if debug:
         text += "\n\nRaw response:\n\n```json\n" + _response_debug(response) + "\n```"
     else:

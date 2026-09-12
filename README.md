@@ -72,7 +72,7 @@ for i in range(10):
 Use a different model:
 
 ```python
-%%explain --model gpt-5-mini
+%%explain --model openai/gpt-5-mini
 a = 0
 for i in range(10):
     a += 1
@@ -94,7 +94,7 @@ Environment variables:
 - `JUPYTER_OPENAI_API_KEY`: preferred OpenAI API key for notebook use
 - `OPENAI_API_KEY`: fallback API key
 - `JUPYTER_OPENAI_BASE_URL`: optional OpenAI-compatible base URL; defaults to `https://hub.ki.fh-swf.de/v1`
-- `NBEXPLAIN_MODEL`: default model, optional; defaults to `openai/gpt-5-nano`
+- `NBEXPLAIN_MODEL`: default model, optional; defaults to `openai/gpt-4.1-nano`
 
 Cell magic options:
 
