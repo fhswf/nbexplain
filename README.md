@@ -4,8 +4,8 @@
 Python code in Jupyter notebooks.
 
 It is intentionally narrow: no chat sidebar, no notebook agent, no code
-execution. The magic sends the cell source to an OpenAI model and renders the
-explanation below the cell as Markdown.
+execution. The magic sends the cell source to an OpenAI-compatible endpoint and
+renders the explanation below the cell as Markdown.
 
 ## Install
 
@@ -21,26 +21,33 @@ For local development:
 uv add --editable .
 ```
 
-## API Key
+## API Endpoint And Key
 
-Set the OpenAI API key in the environment before starting JupyterLab:
+By default, `nbexplain` uses the FH SWF KI Hub endpoint:
 
-```bash
-export OPENAI_API_KEY=sk-...
-jupyter lab
+```text
+https://hub.ki.fh-swf.de/v1
 ```
 
-Do not store API keys in notebooks.
-
-If you want to keep notebook use separate from your normal OpenAI key, use:
+Set the notebook-specific API key in the environment before starting JupyterLab:
 
 ```bash
 export JUPYTER_OPENAI_API_KEY=sk-...
 jupyter lab
 ```
 
+Do not store API keys in notebooks.
+
+To use another OpenAI-compatible endpoint:
+
+```bash
+export JUPYTER_OPENAI_BASE_URL=https://example.edu/v1
+jupyter lab
+```
+
 `nbexplain` checks `JUPYTER_OPENAI_API_KEY` first and falls back to
-`OPENAI_API_KEY` if needed.
+`OPENAI_API_KEY` if needed. The endpoint defaults to the FH SWF KI Hub and can
+be overridden with `JUPYTER_OPENAI_BASE_URL`.
 
 ## Usage
 
@@ -81,14 +88,16 @@ print(y)
 
 Environment variables:
 
-- `OPENAI_API_KEY`: OpenAI API key
 - `JUPYTER_OPENAI_API_KEY`: preferred OpenAI API key for notebook use
+- `OPENAI_API_KEY`: fallback API key
+- `JUPYTER_OPENAI_BASE_URL`: optional OpenAI-compatible base URL; defaults to `https://hub.ki.fh-swf.de/v1`
 - `NBEXPLAIN_MODEL`: default model, optional; defaults to `gpt-5-nano`
 
 Cell magic options:
 
 - `--model MODEL`
 - `--env ENV_VAR`
+- `--base-url URL`
 - `--lang de|en`
 - `--max-output-tokens N`
 

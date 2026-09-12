@@ -14,12 +14,15 @@ from IPython.display import Markdown, display
 DEFAULT_MODEL = "gpt-5-nano"
 DEFAULT_ENV_VAR = "JUPYTER_OPENAI_API_KEY"
 FALLBACK_ENV_VAR = "OPENAI_API_KEY"
+DEFAULT_BASE_URL = "https://hub.ki.fh-swf.de/v1"
+BASE_URL_ENV_VAR = "JUPYTER_OPENAI_BASE_URL"
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="%%explain", add_help=False)
     parser.add_argument("--model", default=os.getenv("NBEXPLAIN_MODEL", DEFAULT_MODEL))
     parser.add_argument("--env", default=None)
+    parser.add_argument("--base-url", default=os.getenv(BASE_URL_ENV_VAR, DEFAULT_BASE_URL))
     parser.add_argument("--lang", default="de")
     parser.add_argument("--max-output-tokens", type=int, default=900)
     parser.add_argument("-h", "--help", action="store_true")
@@ -46,6 +49,7 @@ def _help_text() -> str:
 
         - `--model MODEL`, default: `{DEFAULT_MODEL}` or `NBEXPLAIN_MODEL`
         - `--env ENV_VAR`, default: `{DEFAULT_ENV_VAR}` with `{FALLBACK_ENV_VAR}` fallback
+        - `--base-url URL`, default: `{DEFAULT_BASE_URL}` or `{BASE_URL_ENV_VAR}`
         - `--lang de|en`, default: `de`
         - `--max-output-tokens N`, default: `900`
 
@@ -113,7 +117,7 @@ class ExplainMagic(Magics):
 
         from openai import OpenAI
 
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=api_key, base_url=args.base_url)
         if args.lang.lower().startswith("en"):
             instruction = (
                 "Explain Python code for learners. Be concise, didactic, and concrete. "
