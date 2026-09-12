@@ -32,6 +32,16 @@ jupyter lab
 
 Do not store API keys in notebooks.
 
+If you want to keep notebook use separate from your normal OpenAI key, use:
+
+```bash
+export JUPYTER_OPENAI_API_KEY=sk-...
+jupyter lab
+```
+
+`nbexplain` checks `JUPYTER_OPENAI_API_KEY` first and falls back to
+`OPENAI_API_KEY` if needed.
+
 ## Usage
 
 Load the extension once in a notebook:
@@ -72,6 +82,7 @@ print(y)
 Environment variables:
 
 - `OPENAI_API_KEY`: OpenAI API key
+- `JUPYTER_OPENAI_API_KEY`: preferred OpenAI API key for notebook use
 - `NBEXPLAIN_MODEL`: default model, optional; defaults to `gpt-5-nano`
 
 Cell magic options:
@@ -84,4 +95,3 @@ Cell magic options:
 ## License
 
 MIT
-

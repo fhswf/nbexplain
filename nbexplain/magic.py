@@ -12,13 +12,14 @@ from IPython.display import Markdown, display
 
 
 DEFAULT_MODEL = "gpt-5-nano"
-DEFAULT_ENV_VAR = "OPENAI_API_KEY"
+DEFAULT_ENV_VAR = "JUPYTER_OPENAI_API_KEY"
+FALLBACK_ENV_VAR = "OPENAI_API_KEY"
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="%%explain", add_help=False)
     parser.add_argument("--model", default=os.getenv("NBEXPLAIN_MODEL", DEFAULT_MODEL))
-    parser.add_argument("--env", default=DEFAULT_ENV_VAR)
+    parser.add_argument("--env", default=None)
     parser.add_argument("--lang", default="de")
     parser.add_argument("--max-output-tokens", type=int, default=900)
     parser.add_argument("-h", "--help", action="store_true")
@@ -44,12 +45,13 @@ def _help_text() -> str:
         **Options**
 
         - `--model MODEL`, default: `{DEFAULT_MODEL}` or `NBEXPLAIN_MODEL`
-        - `--env ENV_VAR`, default: `{DEFAULT_ENV_VAR}`
+        - `--env ENV_VAR`, default: `{DEFAULT_ENV_VAR}` with `{FALLBACK_ENV_VAR}` fallback
         - `--lang de|en`, default: `de`
         - `--max-output-tokens N`, default: `900`
 
-        The API key is read from the environment variable `{DEFAULT_ENV_VAR}` by
-        default. Do not store API keys in notebooks.
+        The API key is read from `{DEFAULT_ENV_VAR}` by default. If that is not
+        set, `{FALLBACK_ENV_VAR}` is used as a fallback. Do not store API keys in
+        notebooks.
         """
     ).strip()
 
@@ -84,13 +86,21 @@ class ExplainMagic(Magics):
             display(Markdown(_help_text()))
             return
 
-        api_key = os.getenv(args.env)
+        env_vars = [args.env] if args.env else [DEFAULT_ENV_VAR, FALLBACK_ENV_VAR]
+        api_key = None
+        for candidate in env_vars:
+            value = os.getenv(candidate)
+            if value:
+                api_key = value
+                break
+
         if not api_key:
+            env_hint = "`, `".join(env_vars)
             display(
                 Markdown(
-                    f"**`{args.env}` is not set.**\n\n"
+                    f"**No API key found.** Checked: `{env_hint}`.\n\n"
                     "Start JupyterLab, for example, with:\n\n"
-                    f"```bash\nexport {args.env}=sk-...\n"
+                    f"```bash\nexport {env_vars[0]}=sk-...\n"
                     "jupyter lab\n```"
                 )
             )
@@ -136,4 +146,3 @@ class ExplainMagic(Magics):
 
 def load_ipython_extension(ipython) -> None:
     ipython.register_magics(ExplainMagic)
-
