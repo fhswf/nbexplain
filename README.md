@@ -94,7 +94,7 @@ Environment variables:
 - `JUPYTER_OPENAI_API_KEY`: preferred OpenAI API key for notebook use
 - `OPENAI_API_KEY`: fallback API key
 - `JUPYTER_OPENAI_BASE_URL`: optional OpenAI-compatible base URL; defaults to `https://hub.ki.fh-swf.de/v1`
-- `NBEXPLAIN_MODEL`: default model, optional; defaults to `gpt-5-nano`
+- `NBEXPLAIN_MODEL`: default model, optional; defaults to `openai/gpt-5-nano`
 
 Cell magic options:
 

@@ -11,7 +11,7 @@ from IPython.core.magic import Magics, cell_magic, magics_class
 from IPython.display import Markdown, display
 
 
-DEFAULT_MODEL = "gpt-5-nano"
+DEFAULT_MODEL = "openai/gpt-5-nano"
 DEFAULT_ENV_VAR = "JUPYTER_OPENAI_API_KEY"
 FALLBACK_ENV_VAR = "OPENAI_API_KEY"
 DEFAULT_BASE_URL = "https://hub.ki.fh-swf.de/v1"
