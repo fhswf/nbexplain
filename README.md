@@ -7,6 +7,9 @@ It is intentionally narrow: no chat sidebar, no notebook agent, no code
 execution. The magic sends the cell source to an OpenAI-compatible endpoint and
 renders the explanation below the cell as Markdown.
 
+The implementation uses the OpenAI-compatible Chat Completions API
+(`/v1/chat/completions`) for broad gateway compatibility.
+
 ## Install
 
 From GitHub:

@@ -65,6 +65,24 @@ def _response_text(response: object) -> str:
     if text:
         return str(text)
 
+    choices = getattr(response, "choices", None) or []
+    if choices:
+        message = getattr(choices[0], "message", None)
+        content = getattr(message, "content", None)
+        if isinstance(content, str) and content:
+            return content
+        if isinstance(content, list):
+            parts = []
+            for item in content:
+                if isinstance(item, dict):
+                    value = item.get("text") or item.get("content")
+                else:
+                    value = getattr(item, "text", None) or getattr(item, "content", None)
+                if value:
+                    parts.append(str(value))
+            if parts:
+                return "\n".join(parts).strip()
+
     # Defensive fallback for SDK/model response shape changes.
     parts: list[str] = []
     for item in getattr(response, "output", []) or []:
@@ -134,11 +152,13 @@ class ExplainMagic(Magics):
             prompt = f"Erklaere diesen Python-Code Schritt fuer Schritt:\n\n```python\n{code}\n```"
 
         try:
-            response = client.responses.create(
+            response = client.chat.completions.create(
                 model=args.model,
-                instructions=instruction,
-                input=prompt,
-                max_output_tokens=args.max_output_tokens,
+                messages=[
+                    {"role": "system", "content": instruction},
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=args.max_output_tokens,
             )
             explanation = _response_text(response)
         except Exception as exc:
